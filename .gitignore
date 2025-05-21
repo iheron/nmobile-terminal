@@ -113,7 +113,6 @@ typings/
 *.sln
 *.sw?
 
-dist
 out
 *.log*
 /authorized
