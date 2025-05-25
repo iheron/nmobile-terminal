@@ -23,6 +23,7 @@ interface YargsConfig {
 interface TerminalOptions {
     authorizePath?: string;
     yargs?: YargsConfig;
+    onUnauthorized?: (src: string, client: MessageSender) => Promise<void>;
 }
 interface ProfileOptions {
     avatar?: string;

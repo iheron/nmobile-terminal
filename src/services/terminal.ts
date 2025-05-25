@@ -37,6 +37,7 @@ export interface YargsConfig {
 export interface TerminalOptions {
   authorizePath?: string
   yargs?: YargsConfig
+  onUnauthorized?: (src: string, client: MessageSender) => Promise<void>
 }
 
 export interface ProfileOptions {
@@ -112,11 +113,19 @@ export class Terminal implements MessageSender {
   }
 
   private async authorize(src: string): Promise<boolean> {
+    let isAuthorized = false
     // If no authorized addresses are loaded, allow all
     if (this.authorizedAddresses.size === 0) {
-      return false
+      isAuthorized = false
+    } else {
+      isAuthorized = this.authorizedAddresses.has(src)
     }
-    return this.authorizedAddresses.has(src)
+
+    if (!isAuthorized && this.options.onUnauthorized) {
+      await this.options.onUnauthorized(src, this)
+    }
+
+    return isAuthorized
   }
 
   private async onConnect(addr: string, node: {
@@ -185,8 +194,6 @@ export class Terminal implements MessageSender {
         }
 
         if (!(await this.authorize(src))) {
-          logger.info(`Permission denied for ${src}`)
-          await this.sendErrorMessage(src, 'Permission denied')
           return
         }
 
