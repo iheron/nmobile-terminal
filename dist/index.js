@@ -215,6 +215,9 @@ var Terminal = class {
         if (message.contentType !== "text" /* text */) {
           return;
         }
+        if ("topic" in message && message.topic || "groupId" in message && message.groupId) {
+          return;
+        }
         if (!await this.authorize(src)) {
           return;
         }

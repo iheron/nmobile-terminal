@@ -193,6 +193,11 @@ export class Terminal implements MessageSender {
           return
         }
 
+        // Do not process group chat messages
+        if ('topic' in message && message.topic || 'groupId' in message && message.groupId) {
+          return
+        }
+
         if (!(await this.authorize(src))) {
           return
         }
