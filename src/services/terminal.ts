@@ -144,6 +144,10 @@ export class Terminal implements MessageSender {
 
   private async handleMessage(src: string, raw: string | Uint8Array): Promise<void> {
     try {
+      if (src === this.client.addr) {
+        return
+      }
+
       if (typeof raw == 'string') {
         // Parse the message
         const message = parseMessage(raw)

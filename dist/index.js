@@ -179,6 +179,9 @@ var Terminal = class {
   }
   async handleMessage(src, raw) {
     try {
+      if (src === this.client.addr) {
+        return;
+      }
       if (typeof raw == "string") {
         const message = parseMessage(raw);
         if (!message) {
