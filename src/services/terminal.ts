@@ -39,15 +39,26 @@ export interface TerminalOptions {
   yargs?: YargsConfig
 }
 
+export interface ProfileOptions {
+  avatar?: string
+  name?: string
+  avatar_ext?: string
+  version?: string
+}
+
 export class Terminal implements MessageSender {
   private connectService: ConnectService
   private options: Partial<MultiClientOptions> & TerminalOptions
   private sendOptions = {noReply: true, msgHoldingSeconds: 8640000}
   public client: MultiClient
   private authorizedAddresses: Set<string> = new Set()
+  private profile: ProfileOptions
 
-  constructor(options: Partial<MultiClientOptions> & TerminalOptions) {
+  constructor(options: Partial<MultiClientOptions> & TerminalOptions & {
+    profile: ProfileOptions
+  }) {
     this.options = options || {}
+    this.profile = options.profile
 
     // Bind the callback methods to preserve this context
     this.onMessage = this.onMessage?.bind(this)
@@ -144,6 +155,16 @@ export class Terminal implements MessageSender {
         }
 
         if (message.contentType === MessageContentType.receipt || message.contentType === MessageContentType.read) {
+          return
+        }
+
+        if (message.contentType === MessageContentType.contactProfile) {
+          logger.info(`Received contact profile from ${src}:`, raw)
+          const avatar = fs.readFileSync(path.join(process.cwd(), this.profile.avatar))
+          const avatarExt = this.profile.avatar_ext
+          const version = this.profile.version
+          const name = this.profile.name
+          await this.sendContactProfile(src, (<any>message).requestType, name, Buffer.from(avatar).toString('base64'), avatarExt, version)
           return
         }
 
@@ -293,6 +314,29 @@ export class Terminal implements MessageSender {
       content: message,
       timestamp: Date.now(),
     }
+    await this.client.send(src, JSON.stringify(data), this.sendOptions)
+  }
+
+  public async sendContactProfile(src: string, responseType: string, name: string, avatar: string, avatarExt: string, version: string): Promise<void> {
+    const data: any = {
+      id: uuidV4(),
+      timestamp: Date.now(),
+      contentType: MessageContentType.contactProfile,
+      version: version,
+      responseType: responseType,
+    }
+
+    if (responseType == 'full') {
+      data.content = {
+        name: name,
+        avatar: {
+          type: 'base64',
+          data: avatar,
+          ext: avatarExt,
+        },
+      }
+    }
+
     await this.client.send(src, JSON.stringify(data), this.sendOptions)
   }
 }

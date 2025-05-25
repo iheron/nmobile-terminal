@@ -24,13 +24,22 @@ interface TerminalOptions {
     authorizePath?: string;
     yargs?: YargsConfig;
 }
+interface ProfileOptions {
+    avatar?: string;
+    name?: string;
+    avatar_ext?: string;
+    version?: string;
+}
 declare class Terminal implements MessageSender {
     private connectService;
     private options;
     private sendOptions;
     client: MultiClient;
     private authorizedAddresses;
-    constructor(options: Partial<MultiClientOptions> & TerminalOptions);
+    private profile;
+    constructor(options: Partial<MultiClientOptions> & TerminalOptions & {
+        profile: ProfileOptions;
+    });
     private loadAuthorizedAddresses;
     private authorize;
     private onConnect;
@@ -46,6 +55,7 @@ declare class Terminal implements MessageSender {
     sendReceiptMessage(src: string, msgId: string): Promise<void>;
     sendReadMessage(src: string, msgId: string): Promise<void>;
     sendResultMessage(src: string, message: string): Promise<void>;
+    sendContactProfile(src: string, responseType: string, name: string, avatar: string, avatarExt: string, version: string): Promise<void>;
 }
 
-export { type CommandConfig, type MessageSender, Terminal, type TerminalOptions, type YargsConfig };
+export { type CommandConfig, type MessageSender, type ProfileOptions, Terminal, type TerminalOptions, type YargsConfig };

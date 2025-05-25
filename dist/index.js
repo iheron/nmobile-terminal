@@ -115,8 +115,10 @@ var Terminal = class {
   sendOptions = { noReply: true, msgHoldingSeconds: 864e4 };
   client;
   authorizedAddresses = /* @__PURE__ */ new Set();
+  profile;
   constructor(options) {
     this.options = options || {};
+    this.profile = options.profile;
     this.onMessage = this.onMessage?.bind(this);
     this.onConnect = this.onConnect?.bind(this);
     this.onDisconnect = this.onDisconnect?.bind(this);
@@ -184,6 +186,15 @@ var Terminal = class {
           return;
         }
         if (message.contentType === "receipt" /* receipt */ || message.contentType === "read" /* read */) {
+          return;
+        }
+        if (message.contentType === "contact" /* contactProfile */) {
+          logger.info(`Received contact profile from ${src}:`, raw);
+          const avatar = fs.readFileSync(path.join(process.cwd(), this.profile.avatar));
+          const avatarExt = this.profile.avatar_ext;
+          const version = this.profile.version;
+          const name = this.profile.name;
+          await this.sendContactProfile(src, message.requestType, name, Buffer.from(avatar).toString("base64"), avatarExt, version);
           return;
         }
         try {
@@ -303,6 +314,26 @@ var Terminal = class {
       content: message,
       timestamp: Date.now()
     };
+    await this.client.send(src, JSON.stringify(data), this.sendOptions);
+  }
+  async sendContactProfile(src, responseType, name, avatar, avatarExt, version) {
+    const data = {
+      id: uuidV4(),
+      timestamp: Date.now(),
+      contentType: "contact" /* contactProfile */,
+      version,
+      responseType
+    };
+    if (responseType == "full") {
+      data.content = {
+        name,
+        avatar: {
+          type: "base64",
+          data: avatar,
+          ext: avatarExt
+        }
+      };
+    }
     await this.client.send(src, JSON.stringify(data), this.sendOptions);
   }
 };
